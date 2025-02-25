@@ -1,6 +1,8 @@
 import os
+import re
 import time
 import shutil
+import win32gui
 import win32clipboard
 import sqlite3 as sl
 import pyautogui as pau
@@ -279,7 +281,7 @@ def main():
         for texture_name in sql.select_from(con=connec, query_num=1):
             mes_coun += 1
             shutil.copy(mesh_ful_file_path, result_mes_path + os.sep + f'prop_poster_vertical_{texture_name[0][6:]}.ogf')
-        print(f'Меши постеров созданы: {mes_coun}')
+        print(f'Меши постеров созданы: {mes_coun}, предыдущие копии удалены')
 
     def create_lootbox_content(connec):
         'Записывает содержимое (журналов)лутбоксов'
@@ -385,7 +387,6 @@ def main():
 
         l_dir_work = os.listdir(result_mes_path)
         all_num = len(l_dir_work)
-        cou = 1
         file_numb = 1
         sql = Sql_texture_db()
         dir_quer = 'SELECT name, path FROM TEXTURE_TABLE'    
@@ -403,10 +404,7 @@ def main():
 
                     pau.moveTo(x=852, y=443)
 
-                    if cou:
-                        time.sleep(0.1)
-
-                    cou = 0
+                    time.sleep(0.1)
 
                     pau.click()
                     
@@ -441,8 +439,10 @@ def main():
             9. Указать пути для текстур мешей
             0. Выход
             ''')
-
-            inp = int(input('\nВвод: '))
+            try:
+                inp = int(input('\nВвод: '))
+            except:
+                inp = 100
             sql_class = Sql_texture_db()
 
             if inp == 1:
