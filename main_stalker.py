@@ -265,7 +265,7 @@ def main():
             for texture_name in sql.select_from(con=connec, query_num=2):
                 tex_item_coun += 1
                 rarity_id = texture_name[0][9:10]
-                f.write(text_post(texture_name[0][6:], cost=rarity_identif(rarity_id)[1]))
+                f.write(texture_name[0][6:], cost=rarity_identif(rarity_id)[1])
                 f.write('\n\n')
         print(f'Айтемы постеров созданы: {tex_item_coun} шт.')
 
@@ -312,7 +312,7 @@ def main():
 
                     sql_rar_mag_name = sql.select_from(con=connec, direct_quer=sql_rar_mag_code)
                     
-                    pst_cont.write(f'new_mag_pos{mag_numb} = ' + ','.join([r[0] for r in sql_rar_mag_name]))
+                    pst_cont.write(f'new_mag_pos{mag_numb} = ' + ','.join(['decor_' + r[0] for r in sql_rar_mag_name]))
                     pst_cont.write('\n')
                 pst_cont.write('\n')
         print('Содержимое журналов(лутбокс) записано')
