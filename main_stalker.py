@@ -63,7 +63,7 @@ def main():
         'package_content_spec': 7
         } # Уровни редкости словарь
 
-    class Sql_texture_db:
+    class SqlTextureDB:
 
         def create_tab(self, con):
             with con:
@@ -162,31 +162,44 @@ def main():
         return rar, cost
 
     def descrip_identif(magazine_id):
-        print(type(magazine_id))
         if magazine_id == '03':
             descr = 'Японская манга. Выпуск #'
+            mag_name = 'Постер из журнала "Японская манга"'
         elif magazine_id == '04':
             descr = 'Японсое аниме. Выпуск #'
+            mag_name = 'Постер из журнала "Японсое аниме"'
         elif magazine_id == '05':
-            descr = 'Журнал "Maxim". Выпуск #'
+            descr = '"Maxim". Выпуск #'
+            mag_name = 'Постер из журнала "Maxim"'
         elif magazine_id == '06':
-            descr = 'Журнал "FHM". Выпуск #'
+            descr = '"FHM". Выпуск #'
+            mag_name = 'Постер из журнала "FHM"'
         elif magazine_id == '07':
-            descr = 'Журнал комиксов "Grimm Fairy Tales". Выпуск #'
+            descr = '"Grimm Fairy Tales". Выпуск #'
+            mag_name = 'Постер из журнала "Grimm Fairy Tales"'
         elif magazine_id == '08':
-            descr = 'Журнал "Heavy Metal". Выпуск #'
+            descr = '"Heavy Metal". Выпуск #'
+            mag_name = 'Постер из журнала "Heavy Metal"'
         elif magazine_id == '09':
             descr = 'Старый журнал (Азия). Выпуск #'
+            mag_name = 'Постер из старого журнала США'
         elif magazine_id == '10':
             descr = 'Старый журнал (США). Выпуск #'
+            mag_name = 'Постер из старого журнала США'
         elif magazine_id == '11':
-            descr = 'Журнал "Игромания". Выпуск #'
+            descr = '"Игромания". Выпуск #'
+            mag_name = 'Постер из журнала "Игромания"'
         elif magazine_id == '12':
-            descr = 'Журнал "STALKER". Выпуск #'
+            descr = '"STALKER". Выпуск #'
+            mag_name = 'Постер из журнала "STALKER"'
+        elif magazine_id == '13':
+            descr = 'Арт журнал. Выпуск #'
+            mag_name = 'Постер из Арт журнала'
         else:
             descr = 'некоторое описание'
+            mag_name = 'некоторое название'
         
-        return descr
+        return descr, mag_name
 
     def print_slow(str_1):
         for letter in (str_1.split(' ')):
@@ -213,6 +226,12 @@ def main():
     inv_weight								= 0.01
     use1_functor         				    = placeable_furniture.place_item
     use1_action_functor  					= placeable_furniture.func_place_item
+
+    wg_readable                                      = true
+    use2_functor                                     = western_goods_ui_readable.menu_view
+    use2_action_functor                              = western_goods_ui_readable.use_item
+    use2_allow_db                                    = true
+
     placeable_type                          = prop
     placeable_section                       = placeable_poster{some_text}
 
@@ -260,12 +279,13 @@ def main():
         'Записывает новые айтемы постеров'
         
         tex_item_coun = 0
-        sql = Sql_texture_db()
+        sql = SqlTextureDB()
         with open(post_new_file, 'w') as f:
             for texture_name in sql.select_from(con=connec, query_num=2):
+                print(texture_name[0][6:])
                 tex_item_coun += 1
                 rarity_id = texture_name[0][9:10]
-                f.write(texture_name[0][6:], cost=rarity_identif(rarity_id)[1])
+                f.write(text_post(texture_name[0][6:], cost=rarity_identif(rarity_id)[1]))
                 f.write('\n\n')
         print(f'Айтемы постеров созданы: {tex_item_coun} шт.')
 
@@ -277,7 +297,7 @@ def main():
             for file in os.listdir(result_mes_path):
                 os.remove(result_mes_path + se + file)
 
-        sql = Sql_texture_db()            
+        sql = SqlTextureDB()            
         for texture_name in sql.select_from(con=connec, query_num=1):
             mes_coun += 1
             shutil.copy(mesh_ful_file_path, result_mes_path + os.sep + f'prop_poster_vertical_{texture_name[0][6:]}.ogf')
@@ -286,7 +306,7 @@ def main():
     def create_lootbox_content(connec):
         'Записывает содержимое (журналов)лутбоксов'
 
-        sql = Sql_texture_db()
+        sql = SqlTextureDB()
 
         with open(post_content_new_file, 'w') as pst_cont:
 
@@ -318,7 +338,7 @@ def main():
         print('Содержимое журналов(лутбокс) записано')
 
     def create_items_parts_paper():
-        'Дабавляет журналу/постеру часть Бумага 1шт. для разборки (Меши должны быть)'
+        'Добавляет журналу/постеру часть Бумага 1шт. для разборки (Меши должны быть)'
         
         with open(post_parts_new_file, 'w') as prts_file:
             prts_file.write('![nor_parts_list]\n')
@@ -340,15 +360,15 @@ def main():
             for rare_name in dir_tuple:
                 os.mkdir(path + os.sep + folder_name + os.sep + rare_name)
 
-    def poster_item_descr(num, rarity_id, descript):
+    def poster_item_descr(num, rarity_id, descript, poster_name):
         
         rar = rarity_identif(rarity_id)[0]
         poster_item_descr_text = rf'''
     <string id="st_placeable_poster{num}">
-        <text>SOME_NAME</text>
+        <text>{poster_name}</text>
     </string>
     <string id="st_placeable_poster{num}_descr">
-        <text>%c[ui_gray_2]{descript}\n \n
+        <text>%c[ui_gray_2]{descript}{num[-4:]}\n \n
         %c[0,255,255,255]РЕДКОСТЬ ВЫПУСКА: {rar}\n
         %c[ui_gray_2]ХАРАКТЕРИСТИКИ:\n
         %c[d_cyan] • %c[pda_white] Размещаемое\n
@@ -358,7 +378,7 @@ def main():
 
     def create_description_xml(connec):
 
-        sql = Sql_texture_db()
+        sql = SqlTextureDB()
             
         with open(description_rus_path + se + 'poster_descrip.xml', 'w') as xml_desc:
             xml_desc.write('<?xml version="1.0" encoding="windows-1251"?>')
@@ -366,7 +386,8 @@ def main():
             xml_desc.write('<string_table>\n')
             for texture_name in sql.select_from(con=connec, query_num=2):
                 mag_id = texture_name[0][6:8]
-                xml_desc.write(poster_item_descr(num=texture_name[0][6:], rarity_id=texture_name[0][9:10], descript=descrip_identif(mag_id))) #, encoding='WINDOWS-1251', xml_declaration=True)
+                desc_name = descrip_identif(mag_id)
+                xml_desc.write(poster_item_descr(num=texture_name[0][6:], rarity_id=texture_name[0][9:10], descript=desc_name[0], poster_name=desc_name[1])) #, encoding='WINDOWS-1251', xml_declaration=True)
                 xml_desc.write('\n')
             xml_desc.write('</string_table>')
         print('Описание постеров записано')
@@ -388,7 +409,7 @@ def main():
         l_dir_work = os.listdir(result_mes_path)
         all_num = len(l_dir_work)
         file_numb = 1
-        sql = Sql_texture_db()
+        sql = SqlTextureDB()
         dir_quer = 'SELECT name, path FROM TEXTURE_TABLE'    
         textures_lis =  sql.select_from(con=connec, direct_quer=dir_quer)
         mesh_lis = os.listdir(result_mes_path)
@@ -443,7 +464,7 @@ def main():
                 inp = int(input('\nВвод: '))
             except:
                 inp = 100
-            sql_class = Sql_texture_db()
+            sql_class = SqlTextureDB()
 
             if inp == 1:
                 sql_class.create_tab(connection)
@@ -488,8 +509,8 @@ def main():
     menu_func()
 
 if __name__ == '__main__':
-    try:
         main()
-    except Exception as err:
-        print(err)
+    # try:
+    # except Exception as err:
+    #     print(err)
 
