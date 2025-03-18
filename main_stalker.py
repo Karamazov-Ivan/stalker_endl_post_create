@@ -43,6 +43,8 @@ def main():
 
     description_rus_path = gamma_main_path + se + r'configs\text\rus' # Описание айтемов, русский язык
 
+    wg_texture_descr_path =  gamma_main_path + se + r'configs\ui\textures_descr' # Описание читаемых текстур для WG xml
+
     loot_quality_list = (
         'package_content',
         'package_content_uncommon',
@@ -93,6 +95,7 @@ def main():
         def select_from(self, con, direct_quer=0, query_num=0):
 
             cursor = con.cursor()
+
             if query_num == 1:
                 res = cursor.execute('''
                     SELECT *
@@ -224,13 +227,13 @@ def main():
     inv_grid_height							= 2
     cost									= {cost}
     inv_weight								= 0.01
-    use1_functor         				    = placeable_furniture.place_item
-    use1_action_functor  					= placeable_furniture.func_place_item
+    use2_functor         				    = placeable_furniture.place_item
+    use2_action_functor  					= placeable_furniture.func_place_item
 
     wg_readable                                      = true
-    use2_functor                                     = western_goods_ui_readable.menu_view
-    use2_action_functor                              = western_goods_ui_readable.use_item
-    use2_allow_db                                    = true
+    use1_functor                                     = western_goods_ui_readable.menu_view
+    use1_action_functor                              = western_goods_ui_readable.use_item
+    use1_allow_db                                    = true
 
     placeable_type                          = prop
     placeable_section                       = placeable_poster{some_text}
@@ -375,6 +378,36 @@ def main():
         </text>
     </string>'''
         return poster_item_descr_text
+    
+    def poster_texture_descr_wg(connec):
+        
+
+        sql = SqlTextureDB()
+        
+        def tex_desc_template_def(some_tex_path, some_texture_name):
+
+            tex_desc_template = f"""
+    <file name="{some_tex_path}.dds">
+        <texture id="ui_decor_poster{some_texture_name}_page_1"               x="0"    y="0"    width="2048"    height="1024"/>
+    </file>"""
+            return tex_desc_template
+
+        with open(wg_texture_descr_path + se + 'ui_rick_magazine.xml', 'w') as xml_desc2:
+            xml_desc2.write('<w>')
+            # xml_desc2.write('\n')
+
+            dir_quer = 'SELECT path, name FROM TEXTURE_TABLE'
+
+
+            for texture_name in sql.select_from(con=connec, direct_quer=dir_quer): 
+                xml_desc2.write(tex_desc_template_def(texture_name[0][-33:], texture_name[1][-9:]))
+                xml_desc2.write('\n')
+            xml_desc2.write('</w>')
+
+        print('Описание постеров записано')       
+
+        
+        
 
     def create_description_xml(connec):
 
@@ -398,11 +431,11 @@ def main():
         win32clipboard.SetClipboardText(copy_text)
         win32clipboard.CloseClipboard()
 
-    def clip_pate_board():
-        # get clipboard data
-        win32clipboard.OpenClipboard()
-        data = win32clipboard.GetClipboardData()
-        win32clipboard.CloseClipboard()
+    # def clip_pate_board():
+    #     # get clipboard data
+    #     win32clipboard.OpenClipboard()
+    #     data = win32clipboard.GetClipboardData()
+    #     win32clipboard.CloseClipboard()
 
     def way_writer(connec):
 
@@ -410,7 +443,7 @@ def main():
         all_num = len(l_dir_work)
         file_numb = 1
         sql = SqlTextureDB()
-        dir_quer = 'SELECT name, path FROM TEXTURE_TABLE'    
+        dir_quer = 'SELECT name, path FROM TEXTURE_TABLE'
         textures_lis =  sql.select_from(con=connec, direct_quer=dir_quer)
         mesh_lis = os.listdir(result_mes_path)
         for mesh in mesh_lis:
@@ -458,6 +491,7 @@ def main():
             7. Создать содержимое журналов и плакатов (бумага)
             8. Создать описание для постеров
             9. Указать пути для текстур мешей
+            10. Создать описание текступ для Western Goods
             0. Выход
             ''')
             try:
@@ -486,7 +520,11 @@ def main():
                 create_poster_items(connec=connection)
                 input()
             elif inp == 5:
-                copy_poster_mesh(connec=connection, del_mesh=1)
+                inp_2 = input('Данное действие перезапишет все меши, продолжить? (д/н)')
+                if inp_2 in ('д', 'y'):
+                    copy_poster_mesh(connec=connection, del_mesh=1)
+                else:
+                    print('Ничего')
                 input()
             elif inp == 6:
                 create_lootbox_content(connec=connection)
@@ -499,6 +537,9 @@ def main():
                 input()
             elif inp == 9:
                 way_writer(connec=connection)
+                input()
+            elif inp == 10:
+                poster_texture_descr_wg(connec=connection)
                 input()
             elif inp == 0:
                 break
