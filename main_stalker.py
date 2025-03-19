@@ -1,11 +1,15 @@
 import os
-import re
 import time
 import shutil
-import win32gui
 import win32clipboard
 import sqlite3 as sl
 import pyautogui as pau
+import mod_fold.poster_item_templ as m_itm
+import mod_fold.poster_sql_db as m_db
+import mod_fold.poster_loot_quality as m_ql
+import mod_fold.poster_identif as m_pi
+# import re
+# import win32gui
 
 from sys import stdout
 # from os import path
@@ -35,6 +39,8 @@ def main():
     ref_mesh_file = 'poster_refer_mesh.ogf'
     result_mes_path = gamma_main_path + se + r'meshes\dynamics\efp_props' # Меши постеров
     mesh_ful_file_path = ref_mesh_path + os.sep + ref_mesh_file
+    ref_mesh_horizon_file = 'poster_refer_mesh_horizont.ogf'
+    mesh_horizon_ful_file_path = ref_mesh_path + os.sep + ref_mesh_horizon_file
 
     post_content_new_file = gamma_main_path + se + r'configs\items\settings\itms_manager_posters.ltx' # Содержимое журнала (лутбокс)
 
@@ -45,213 +51,11 @@ def main():
 
     wg_texture_descr_path =  gamma_main_path + se + r'configs\ui\textures_descr' # Описание читаемых текстур для WG xml
 
-    loot_quality_list = (
-        'package_content',
-        'package_content_uncommon',
-        'package_content_rare',
-        'package_content_epic',
-        'package_content_legendary',
-        'package_content_new_year',
-        'package_content_spec'
-        ) # Уровни редкости
-    
-    loot_quality_dict = {
-        'package_content': 1,
-        'package_content_uncommon': 2,
-        'package_content_rare': 3,
-        'package_content_epic': 4,
-        'package_content_legendary': 5,
-        'package_content_new_year': 6,
-        'package_content_spec': 7
-        } # Уровни редкости словарь
-
-    class SqlTextureDB:
-
-        def create_tab(self, con):
-            with con:
-                try:
-                    con.execute('DROP TABLE TEXTURE_TABLE')
-                except:
-                    print('Таблица TEXTURE_TABLE не существует')
-                con.execute("""
-                    CREATE TABLE TEXTURE_TABLE (
-                        name TEXT
-                        ,TIMESTAMP_2 DEFAULT (datetime('now','localtime'))
-                        ,path TEXT
-                        --,magazine TEXT
-                        --,rare TEXT
-                        --,numb TEXT
-                        --,TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );
-                """)
-            print('Таблица TEXTURE_TABLE создана')
-
-        def insert_data(self, con, data):
-            sql = 'INSERT INTO TEXTURE_TABLE (name, path) values(?, ?)'
-            with con:
-                con.executemany(sql, data)
-            print('Данные текстур внесены в БД')
-
-        def select_from(self, con, direct_quer=0, query_num=0):
-
-            cursor = con.cursor()
-
-            if query_num == 1:
-                res = cursor.execute('''
-                    SELECT *
-                    FROM (
-                        SELECT
-                            name
-                            ,SUBSTRING(name, 7, 2) AS mag
-                            ,SUBSTRING(name, 10, 1) AS rare
-                            ,SUBSTRING(name, 12, 4) AS numb
-                        FROM TEXTURE_TABLE
-                    ) AS result_t
-                    --WHERE rare = '3'
-                ''')
-                return res.fetchall()
-            
-            elif query_num == 2:
-                res = cursor.execute('''
-                    SELECT name
-                    FROM TEXTURE_TABLE
-                ''')
-                return res.fetchall()
-            
-            elif direct_quer:
-                res = cursor.execute(direct_quer)
-                return res.fetchall()
-            
-            else:
-                res = cursor.execute('SELECT * FROM TEXTURE_TABLE')
-                return res.fetchall()
-
-            # if fetch:
-            #     for row in res:
-            #         print(row)
-
-        def delete_from(self, con):
-            with con:
-                delete_table = 'TEXTURE_TABLE'
-                con.execute(f'DELETE FROM {delete_table}')
-            print(f'Таблица {delete_table} очищена')
-
-    def rarity_identif(rarity_id):
-        if rarity_id == '1':
-            rar = r'%c[ui_gray_2]Обычный'
-            cost = 20
-        elif rarity_id == '2':
-            rar = r'%c[0,0,128,0]Необычный'
-            cost = 500
-        elif rarity_id == '3':
-            rar = r'%c[0,65,105,225]Редкий'
-            cost = 3000
-        elif rarity_id == '4':
-            rar = r'%c[0,138,43,226]Эпический'
-            cost = 10000
-        elif rarity_id == '5':
-            rar = r'%c[0,255,215,0]Легендарный'
-            cost = 20000
-        elif rarity_id == '6':
-            rar = r'%c[0,178,34,34]Новогодний'
-            cost = 23000
-        elif rarity_id == '7':
-            rar = r'%c[0,135,206,250]Специальный'
-            cost = 23000
-        else:
-            rar = r'%c[d_red]Ошибочный'
-            cost = 1
-
-        return rar, cost
-
-    def descrip_identif(magazine_id):
-        if magazine_id == '03':
-            descr = 'Японская манга. Выпуск #'
-            mag_name = 'Постер из журнала "Японская манга"'
-        elif magazine_id == '04':
-            descr = 'Японсое аниме. Выпуск #'
-            mag_name = 'Постер из журнала "Японсое аниме"'
-        elif magazine_id == '05':
-            descr = '"Maxim". Выпуск #'
-            mag_name = 'Постер из журнала "Maxim"'
-        elif magazine_id == '06':
-            descr = '"FHM". Выпуск #'
-            mag_name = 'Постер из журнала "FHM"'
-        elif magazine_id == '07':
-            descr = '"Grimm Fairy Tales". Выпуск #'
-            mag_name = 'Постер из журнала "Grimm Fairy Tales"'
-        elif magazine_id == '08':
-            descr = '"Heavy Metal". Выпуск #'
-            mag_name = 'Постер из журнала "Heavy Metal"'
-        elif magazine_id == '09':
-            descr = 'Старый журнал (Азия). Выпуск #'
-            mag_name = 'Постер из старого журнала США'
-        elif magazine_id == '10':
-            descr = 'Старый журнал (США). Выпуск #'
-            mag_name = 'Постер из старого журнала США'
-        elif magazine_id == '11':
-            descr = '"Игромания". Выпуск #'
-            mag_name = 'Постер из журнала "Игромания"'
-        elif magazine_id == '12':
-            descr = '"STALKER". Выпуск #'
-            mag_name = 'Постер из журнала "STALKER"'
-        elif magazine_id == '13':
-            descr = 'Арт журнал. Выпуск #'
-            mag_name = 'Постер из Арт журнала'
-        else:
-            descr = 'некоторое описание'
-            mag_name = 'некоторое название'
-        
-        return descr, mag_name
-
     def print_slow(str_1):
         for letter in (str_1.split(' ')):
             stdout.write(letter + ' ')
             stdout.flush()
             time.sleep(0.01)
-
-    def text_post(some_text, cost):
-        total = rf""";=================POSTER_{some_text}
-    [decor_poster{some_text}]:tch_junk
-    class									= II_ATTCH
-    kind								    = i_tool
-    visual									= dynamics\efp_props\prop_poster_vertical_{some_text}.ogf
-
-    description								= st_placeable_poster{some_text}_descr
-    inv_name								= st_placeable_poster{some_text}
-    inv_name_short							= st_placeable_poster{some_text}
-    icons_texture							= ui\ui_maid_efp_props
-    inv_grid_x								= 3
-    inv_grid_y								= 5
-    inv_grid_width							= 1
-    inv_grid_height							= 2
-    cost									= {cost}
-    inv_weight								= 0.01
-    use2_functor         				    = placeable_furniture.place_item
-    use2_action_functor  					= placeable_furniture.func_place_item
-
-    wg_readable                                      = true
-    use1_functor                                     = western_goods_ui_readable.menu_view
-    use1_action_functor                              = western_goods_ui_readable.use_item
-    use1_allow_db                                    = true
-
-    placeable_type                          = prop
-    placeable_section                       = placeable_poster{some_text}
-
-    snd_on_take								= paper
-    repair_part_bonus	 	                = 0.02
-
-    [placeable_poster{some_text}]:physic_object
-    visual									= dynamics\efp_props\prop_poster_vertical_{some_text}.ogf
-    placeable_type                          = prop
-    base_rotation                           = 0
-    script_binding                          = bind_hf_base.init
-    item_section                            = decor_poster{some_text}
-    ui_texture                              = ui_decor_poster{some_text}
-    bounding_box_size                       = 0.570892, 0.747018, 0.017975
-    bounding_box_origin                     = -0.02095, 0.012679, -0.005057"""
-
-        return total
 
     def rename_files(res_list):
         'Переименовывает все текстуры в папках'
@@ -282,13 +86,13 @@ def main():
         'Записывает новые айтемы постеров'
         
         tex_item_coun = 0
-        sql = SqlTextureDB()
+        sql = m_db.SqlTextureDB()
         with open(post_new_file, 'w') as f:
             for texture_name in sql.select_from(con=connec, query_num=2):
                 print(texture_name[0][6:])
                 tex_item_coun += 1
                 rarity_id = texture_name[0][9:10]
-                f.write(text_post(texture_name[0][6:], cost=rarity_identif(rarity_id)[1]))
+                f.write(m_itm.text_post(texture_name[0][6:], cost=m_pi.rarity_identif(rarity_id)[1]))
                 f.write('\n\n')
         print(f'Айтемы постеров созданы: {tex_item_coun} шт.')
 
@@ -296,24 +100,28 @@ def main():
         'Копирует меши и удаляет(опционально)'
         
         mes_coun = 0
-        if del_mesh:
+        if del_mesh == 1:
             for file in os.listdir(result_mes_path):
                 os.remove(result_mes_path + se + file)
 
-        sql = SqlTextureDB()            
+        sql = m_db.SqlTextureDB()            
         for texture_name in sql.select_from(con=connec, query_num=1):
-            mes_coun += 1
-            shutil.copy(mesh_ful_file_path, result_mes_path + os.sep + f'prop_poster_vertical_{texture_name[0][6:]}.ogf')
+            if texture_name[0][9] == '7':
+                mes_coun += 1
+                shutil.copy(mesh_horizon_ful_file_path, result_mes_path + os.sep + f'prop_poster_vertical_{texture_name[0][6:]}.ogf')
+            else:
+                mes_coun += 1
+                shutil.copy(mesh_ful_file_path, result_mes_path + os.sep + f'prop_poster_vertical_{texture_name[0][6:]}.ogf')
         print(f'Меши постеров созданы: {mes_coun}, предыдущие копии удалены')
 
     def create_lootbox_content(connec):
         'Записывает содержимое (журналов)лутбоксов'
 
-        sql = SqlTextureDB()
+        sql = m_db.SqlTextureDB()
 
         with open(post_content_new_file, 'w') as pst_cont:
 
-            for rare_name in loot_quality_list:
+            for rare_name in m_ql.loot_quality_list:
                 pst_cont.write(f'[{rare_name}]')
                 pst_cont.write('\n')                
                 
@@ -330,7 +138,7 @@ def main():
                                 ,SUBSTRING(name, 12, 4) AS numb
                             FROM TEXTURE_TABLE
                         ) AS result_t
-                        WHERE mag = '{mag_numb}' AND rare = '{loot_quality_dict[rare_name]}'
+                        WHERE mag = '{mag_numb}' AND rare = '{m_ql.loot_quality_dict[rare_name]}'
                     '''
 
                     sql_rar_mag_name = sql.select_from(con=connec, direct_quer=sql_rar_mag_code)
@@ -365,7 +173,7 @@ def main():
 
     def poster_item_descr(num, rarity_id, descript, poster_name):
         
-        rar = rarity_identif(rarity_id)[0]
+        rar = m_pi.rarity_identif(rarity_id)[0]
         poster_item_descr_text = rf'''
     <string id="st_placeable_poster{num}">
         <text>{poster_name}</text>
@@ -381,8 +189,7 @@ def main():
     
     def poster_texture_descr_wg(connec):
         
-
-        sql = SqlTextureDB()
+        sql = m_db.SqlTextureDB()
         
         def tex_desc_template_def(some_tex_path, some_texture_name):
 
@@ -411,7 +218,7 @@ def main():
 
     def create_description_xml(connec):
 
-        sql = SqlTextureDB()
+        sql = m_db.SqlTextureDB()
             
         with open(description_rus_path + se + 'poster_descrip.xml', 'w') as xml_desc:
             xml_desc.write('<?xml version="1.0" encoding="windows-1251"?>')
@@ -419,7 +226,7 @@ def main():
             xml_desc.write('<string_table>\n')
             for texture_name in sql.select_from(con=connec, query_num=2):
                 mag_id = texture_name[0][6:8]
-                desc_name = descrip_identif(mag_id)
+                desc_name = m_pi.descrip_identif(mag_id)
                 xml_desc.write(poster_item_descr(num=texture_name[0][6:], rarity_id=texture_name[0][9:10], descript=desc_name[0], poster_name=desc_name[1])) #, encoding='WINDOWS-1251', xml_declaration=True)
                 xml_desc.write('\n')
             xml_desc.write('</string_table>')
@@ -442,7 +249,7 @@ def main():
         l_dir_work = os.listdir(result_mes_path)
         all_num = len(l_dir_work)
         file_numb = 1
-        sql = SqlTextureDB()
+        sql = m_db.SqlTextureDB()
         dir_quer = 'SELECT name, path FROM TEXTURE_TABLE'
         textures_lis =  sql.select_from(con=connec, direct_quer=dir_quer)
         mesh_lis = os.listdir(result_mes_path)
@@ -498,7 +305,7 @@ def main():
                 inp = int(input('\nВвод: '))
             except:
                 inp = 100
-            sql_class = SqlTextureDB()
+            sql_class = m_db.SqlTextureDB()
 
             if inp == 1:
                 sql_class.create_tab(connection)
