@@ -89,11 +89,18 @@ def main():
         sql = m_db.SqlTextureDB()
         with open(post_new_file, 'w') as f:
             for texture_name in sql.select_from(con=connec, query_num=2):
-                print(texture_name[0][6:])
-                tex_item_coun += 1
-                rarity_id = texture_name[0][9:10]
-                f.write(m_itm.text_post(texture_name[0][6:], cost=m_pi.rarity_identif(rarity_id)[1]))
-                f.write('\n\n')
+                if texture_name[0][9] == '7':
+                    print(texture_name[0][6:])
+                    tex_item_coun += 1
+                    rarity_id = texture_name[0][9:10]
+                    f.write(m_itm.text_post_horizont(texture_name[0][6:], cost=m_pi.rarity_identif(rarity_id)[1]))
+                    f.write('\n\n')
+                else:
+                    print(texture_name[0][6:])
+                    tex_item_coun += 1
+                    rarity_id = texture_name[0][9:10]
+                    f.write(m_itm.text_post(texture_name[0][6:], cost=m_pi.rarity_identif(rarity_id)[1]))
+                    f.write('\n\n')
         print(f'Айтемы постеров созданы: {tex_item_coun} шт.')
 
     def copy_poster_mesh(connec, del_mesh=0):
@@ -283,6 +290,18 @@ def main():
                     time.sleep(0.1)
                     fin_time = time.time()
                     print(f'{round(avg_t := (fin_time - str_time), 4)} sec.  Approximately time left: {round(((all_num - file_numb) * avg_t) / 60, 4)} min.')
+    
+    def textures_delete(tex_path):
+
+        for file in os.listdir(tex_path):
+            file_p = tex_path + os.sep + file
+            if os.path.isdir(file_p):
+                textures_delete(file_p)
+            else:
+                os.remove(file_p)
+                # print(file_p)
+        print('Текстуры удалены')
+
 
     def menu_func():
         while True:
@@ -299,6 +318,7 @@ def main():
             8. Создать описание для постеров
             9. Указать пути для текстур мешей
             10. Создать описание текступ для Western Goods
+            11. Удалить все текстуры изи папок
             0. Выход
             ''')
             try:
@@ -347,6 +367,9 @@ def main():
                 input()
             elif inp == 10:
                 poster_texture_descr_wg(connec=connection)
+                input()
+            elif inp == 11:
+                textures_delete(path)
                 input()
             elif inp == 0:
                 break
