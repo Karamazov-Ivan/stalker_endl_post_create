@@ -38,6 +38,8 @@ class SqlTextureDB:
                         ,SUBSTRING(name, 7, 2) AS mag
                         ,SUBSTRING(name, 10, 1) AS rare
                         ,SUBSTRING(name, 12, 4) AS numb
+                        ,path
+                        ,RANK() OVER (PARTITION BY SUBSTRING(name, 7, 2) ODER BY SUBSTRING(name, 10, 1) DESC, SUBSTRING(name, 12, 4))
                     FROM TEXTURE_TABLE
                 ) AS result_t
                 --WHERE rare = '3'
@@ -67,5 +69,5 @@ class SqlTextureDB:
         with con:
             delete_table = 'TEXTURE_TABLE'
             con.execute(f'DELETE FROM {delete_table}')
-            con.close()
+            # con.close()
         print(f'Таблица {delete_table} очищена')

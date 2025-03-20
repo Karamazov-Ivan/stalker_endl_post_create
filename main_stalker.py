@@ -8,47 +8,47 @@ import mod_fold.poster_item_templ as m_itm
 import mod_fold.poster_sql_db as m_db
 import mod_fold.poster_loot_quality as m_ql
 import mod_fold.poster_identif as m_pi
+import configparser
 # import re
 # import win32gui
 
+from PIL import Image
 from sys import stdout
 # from os import path
 # from os import listdir
 # from os import sep
 # from os.path import isfile, join
 
-#Копирование мешей ----------------------------------------------------------------------------------------------
-
 def main():
 
+    config = configparser.ConfigParser()  # создаём объекта парсера
+    config.read("config.ini")  # читаем конфиг
+
+    # Переменные из конфига
+    gamma_main_path = config["settings"]["gamma_main_path"].encode('unicode_escape').decode()
+    poster_item_name = config["settings"]["poster_item_name"]
+    ref_mesh_file = config["settings"]["ref_mesh_file"]
+    ref_mesh_horizon_file = config["settings"]["ref_mesh_horizon_file"]
+
     se = os.sep
-
     texture_list = []
-
     connection = sl.connect('textures.db')
-
-    poster_item_name = 'decor_poster' # Наименование постера в items
+    ref_mesh_path = os.getcwd() 
 
     gamma_main_path = r'C:\GAMMA\mods\New_posters\gamedata'
-
-    path = gamma_main_path + se + r'textures\item\posters' # Текустуры постеров
-    post_new_file = gamma_main_path + se + r'configs\items\items\items_new_posters_pos.ltx'
-
-    # ref_mesh_path = r'D:\Python\projects\stalker' # Референс вертикального постера
-    ref_mesh_path = os.getcwd() # Референс вертикального постера
+    poster_item_name = 'decor_poster' # Наименование постера в items
     ref_mesh_file = 'poster_refer_mesh.ogf'
-    result_mes_path = gamma_main_path + se + r'meshes\dynamics\efp_props' # Меши постеров
-    mesh_ful_file_path = ref_mesh_path + os.sep + ref_mesh_file
     ref_mesh_horizon_file = 'poster_refer_mesh_horizont.ogf'
-    mesh_horizon_ful_file_path = ref_mesh_path + os.sep + ref_mesh_horizon_file
 
+    mesh_ful_file_path = ref_mesh_path + os.sep + ref_mesh_file # Референс вертикального постера
+    mesh_horizon_ful_file_path = ref_mesh_path + os.sep + ref_mesh_horizon_file # Референс горизонтального постера
+    path = gamma_main_path + se + r'textures\item\posters' # Текустуры постеров
+    post_new_file = gamma_main_path + se + r'configs\items\items\items_new_posters_pos.ltx' # Айтемы постеров
+    result_mes_path = gamma_main_path + se + r'meshes\dynamics\efp_props' # Меши постеров в gamedata
     post_content_new_file = gamma_main_path + se + r'configs\items\settings\itms_manager_posters.ltx' # Содержимое журнала (лутбокс)
-
     post_parts_new_file = gamma_main_path + se + r'configs\items\settings\mod_parts_posters_3.ltx' # Части постеров и журналов для разборки (бумага)
     poster_mesh_path = gamma_main_path + se + r'meshes\dynamics\equipments\trade' # Меши журналов
-
     description_rus_path = gamma_main_path + se + r'configs\text\rus' # Описание айтемов, русский язык
-
     wg_texture_descr_path =  gamma_main_path + se + r'configs\ui\textures_descr' # Описание читаемых текстур для WG xml
 
     def print_slow(str_1):
@@ -88,20 +88,21 @@ def main():
         tex_item_coun = 0
         sql = m_db.SqlTextureDB()
         with open(post_new_file, 'w') as f:
-            for texture_name in sql.select_from(con=connec, query_num=2):
-                if texture_name[0][9] == '7':
-                    print(texture_name[0][6:])
+            sql_que = 'SELECT name, path FROM TEXTURE_TABLE'
+            for texture_name in sql.select_from(con=connec, direct_quer=sql_que):
+                im = Image.open(f'{texture_name[1]}.dds')
+                width, height = im.size
+                if texture_name[0][9] == 7 or height == 2048:
                     tex_item_coun += 1
                     rarity_id = texture_name[0][9:10]
                     f.write(m_itm.text_post_horizont(texture_name[0][6:], cost=m_pi.rarity_identif(rarity_id)[1]))
                     f.write('\n\n')
                 else:
-                    print(texture_name[0][6:])
                     tex_item_coun += 1
                     rarity_id = texture_name[0][9:10]
                     f.write(m_itm.text_post(texture_name[0][6:], cost=m_pi.rarity_identif(rarity_id)[1]))
                     f.write('\n\n')
-        print(f'Айтемы постеров созданы: {tex_item_coun} шт.')
+        print(f'Айтемы постеров записаны: {tex_item_coun} шт.')
 
     def copy_poster_mesh(connec, del_mesh=0):
         'Копирует меши и удаляет(опционально)'
@@ -113,7 +114,9 @@ def main():
 
         sql = m_db.SqlTextureDB()            
         for texture_name in sql.select_from(con=connec, query_num=1):
-            if texture_name[0][9] == '7':
+            im = Image.open(f'{texture_name[4]}.dds')
+            width, height = im.size
+            if texture_name[0][9] == '7' or height == 2048:
                 mes_coun += 1
                 shutil.copy(mesh_horizon_ful_file_path, result_mes_path + os.sep + f'prop_poster_vertical_{texture_name[0][6:]}.ogf')
             else:
@@ -171,15 +174,17 @@ def main():
                 prts_file.write(f'{poster_item_name}{post_num} = prt_i_paper\n')
         print('Части журналов, плакатов записаны (бумага)')
     
-    def create_rare_folders():
+    def create_rare_folders(dir_count):
+        'Доп функция. Создаёт папки с id редкости для разметки'
+
         # ('1-basic', '2-uncommon', '3-rare', '4-epic', '5-legend', '6-new_year', '7-spec')
         dir_tuple = ('1', '2', '3', '4', '5', '6', '7')
+        # range(dir_count)
         for folder_name in os.listdir(path):
             for rare_name in dir_tuple:
                 os.mkdir(path + os.sep + folder_name + os.sep + rare_name)
 
     def poster_item_descr(num, rarity_id, descript, poster_name):
-        
         rar = m_pi.rarity_identif(rarity_id)[0]
         poster_item_descr_text = rf'''
     <string id="st_placeable_poster{num}">
@@ -195,6 +200,7 @@ def main():
         return poster_item_descr_text
     
     def poster_texture_descr_wg(connec):
+        'Создать описание текступ для Western Goods'
         
         sql = m_db.SqlTextureDB()
         
@@ -220,10 +226,8 @@ def main():
 
         print('Описание постеров записано')       
 
-        
-        
-
     def create_description_xml(connec):
+        'Описание текстур постеров для WG'
 
         sql = m_db.SqlTextureDB()
             
@@ -237,21 +241,21 @@ def main():
                 xml_desc.write(poster_item_descr(num=texture_name[0][6:], rarity_id=texture_name[0][9:10], descript=desc_name[0], poster_name=desc_name[1])) #, encoding='WINDOWS-1251', xml_declaration=True)
                 xml_desc.write('\n')
             xml_desc.write('</string_table>')
-        print('Описание постеров записано')
+        print('Описание текстур постеров записано')
 
-    def clip_copy_boart(copy_text):
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardText(copy_text)
-        win32clipboard.CloseClipboard()
 
-    # def clip_pate_board():
-    #     # get clipboard data
-    #     win32clipboard.OpenClipboard()
-    #     data = win32clipboard.GetClipboardData()
-    #     win32clipboard.CloseClipboard()
 
     def way_writer(connec):
+        '''Прописывает вручную пути текстур в файле меша
+        Читай инструкцию внимательно!
+        Требуется OGF tool:
+        https://github.com/VaIeroK/OGF-tool/releases?ysclid=m8h7kmf2fx224135460'''
+        
+        def clip_copy_boart(copy_text):
+            win32clipboard.OpenClipboard()
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardText(copy_text)
+            win32clipboard.CloseClipboard()
 
         l_dir_work = os.listdir(result_mes_path)
         all_num = len(l_dir_work)
@@ -292,6 +296,7 @@ def main():
                     print(f'{round(avg_t := (fin_time - str_time), 4)} sec.  Approximately time left: {round(((all_num - file_numb) * avg_t) / 60, 4)} min.')
     
     def textures_delete(tex_path):
+        'Очистить все папки с текстурами'
 
         for file in os.listdir(tex_path):
             file_p = tex_path + os.sep + file
@@ -311,14 +316,14 @@ def main():
             1. Пересоздать БД с текстурами
             2. Переименовать текстуры постеров и внести в БД
             3. SELECT * БД
-            4. Создать айтемы для постеров
+            4. Записать айтемы для постеров в "items_new_posters_pos.ltx"
             5. Создать меши для текстур постеров
-            6. Создать содержимое журналов(лутбоксы)
-            7. Создать содержимое журналов и плакатов (бумага)
-            8. Создать описание для постеров
-            9. Указать пути для текстур мешей
-            10. Создать описание текступ для Western Goods
-            11. Удалить все текстуры изи папок
+            6. Записать содержимое журналов(лутбоксы)
+            7. Записать содержимое журналов и плакатов (бумага)
+            8. Записать описание для постеров
+            9. Записать описание текступ для Western Goods
+            10. Указать пути текстур в файле меша. Никакие программы кроме Cmd\PowerShell не должны быть включены! (требуется OGF tool)
+            11. Очистить все папки с текстурами
             0. Выход
             ''')
             try:
@@ -363,16 +368,26 @@ def main():
                 create_description_xml(connec=connection)
                 input()
             elif inp == 9:
-                way_writer(connec=connection)
+                poster_texture_descr_wg(connec=connection)
                 input()
             elif inp == 10:
-                poster_texture_descr_wg(connec=connection)
+                way_writer(connec=connection)
                 input()
             elif inp == 11:
                 textures_delete(path)
                 input()
             elif inp == 0:
                 break
+
+
+            elif inp == 25:
+                num_3 = 0
+                for i in sql_class.select_from(connection, query_num=1):
+                    num_3 += 1
+                    print(f'{num_3}. {i}')
+                input()
+            
+            
             else:
                 print('Ошибка, команда не найдена')
                 input()
