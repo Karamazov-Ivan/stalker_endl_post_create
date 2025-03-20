@@ -15,6 +15,8 @@ inv_grid_width							= 1
 inv_grid_height							= 2
 cost									= {cost}
 inv_weight								= 0.01
+
+; Функтор для размещения
 use2_functor         				    = placeable_furniture.place_item
 use2_action_functor  					= placeable_furniture.func_place_item
 
@@ -62,10 +64,30 @@ inv_grid_height							= 2
 cost									= {cost}
 inv_weight								= 0.01
 
-use1_functor         				    = placeable_furniture.place_item
-use1_action_functor  					= placeable_furniture.func_place_item
+; Функтор для размещения
+use2_functor         				    = placeable_furniture.place_item
+use2_action_functor  					= placeable_furniture.func_place_item
+
+; WG читабельный функтор
+wg_readable                                      = true
+use1_functor                                     = western_goods_ui_readable.menu_view
+use1_action_functor                              = western_goods_ui_readable.use_item
+use1_allow_db                                    = true
 
 placeable_type                          = prop
-placeable_section                       = placeable_poster{some_text}"""
+placeable_section                       = placeable_poster{some_text}
+
+[placeable_poster{some_text}]:physic_object
+visual									= dynamics\efp_props\prop_poster_vertical_{some_text}.ogf
+placeable_type                          = prop
+base_rotation                           = 0
+
+script_binding                          = bind_hf_base.init
+item_section                            = decor_poster{some_text}
+
+ui_texture                              = ui_decor_poster1
+
+bounding_box_size                        = 1.26404, 0.882494, 0.0004
+bounding_box_origin                      = 0, 0.002616, 0"""
     
     return total

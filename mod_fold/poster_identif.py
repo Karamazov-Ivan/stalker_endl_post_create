@@ -18,8 +18,8 @@ def descrip_identif(magazine_id):
         descr = '"Heavy Metal". Выпуск #'
         mag_name = 'Постер из журнала "Heavy Metal"'
     elif magazine_id == '09':
-        descr = 'Старый журнал (Азия). Выпуск #'
-        mag_name = 'Постер из старого журнала США'
+        descr = ':Журнал СССР "Крестьянка". Выпуск #'
+        mag_name = 'Плакат СССР'
     elif magazine_id == '10':
         descr = 'Старый журнал (США). Выпуск #'
         mag_name = 'Постер из старого журнала США'
@@ -32,6 +32,12 @@ def descrip_identif(magazine_id):
     elif magazine_id == '13':
         descr = 'Арт журнал. Выпуск #'
         mag_name = 'Постер из Арт журнала'
+    elif magazine_id == '14':
+        descr = 'Авто журнал СССР "За рулём". Выпуск #'
+        mag_name = 'Плакат из журнала "За рулём"'
+    elif magazine_id == '15':
+        descr = 'Авто журнал Германия "Auto Bild". Выпуск #'
+        mag_name = 'Постер из журнала "Auto Bild"'
     else:
         descr = 'некоторое описание'
         mag_name = 'некоторое название'

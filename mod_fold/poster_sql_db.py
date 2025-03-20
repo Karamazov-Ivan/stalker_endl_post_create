@@ -39,7 +39,7 @@ class SqlTextureDB:
                         ,SUBSTRING(name, 10, 1) AS rare
                         ,SUBSTRING(name, 12, 4) AS numb
                         ,path
-                        ,RANK() OVER (PARTITION BY SUBSTRING(name, 7, 2) ODER BY SUBSTRING(name, 10, 1) DESC, SUBSTRING(name, 12, 4))
+                        ,RANK() OVER (PARTITION BY SUBSTRING(name, 7, 2) ORDER BY SUBSTRING(name, 10, 1) DESC, SUBSTRING(name, 12, 4))
                     FROM TEXTURE_TABLE
                 ) AS result_t
                 --WHERE rare = '3'
