@@ -1,4 +1,9 @@
 def text_post(some_text, cost):
+
+    grid_x = int(some_text[:2]) - 3
+    grid_y = int(some_text[3])
+    
+    # 14_7_007
     total = rf""";=================POSTER_{some_text}
 [decor_poster{some_text}]:tch_junk
 class									= II_ATTCH
@@ -8,19 +13,17 @@ visual									= dynamics\efp_props\prop_poster_vertical_{some_text}.ogf
 description								= st_placeable_poster{some_text}_descr
 inv_name								= st_placeable_poster{some_text}
 inv_name_short							= st_placeable_poster{some_text}
-icons_texture							= ui\ui_maid_efp_props
-inv_grid_x								= 3
-inv_grid_y								= 5
+icons_texture							= ui\metal_magazines_4
+inv_grid_x								= {grid_x}
+inv_grid_y								= {grid_y + grid_y}
 inv_grid_width							= 1
 inv_grid_height							= 2
 cost									= {cost}
 inv_weight								= 0.01
 
-; Функтор для размещения
 use2_functor         				    = placeable_furniture.place_item
 use2_action_functor  					= placeable_furniture.func_place_item
 
-; WG читабельный функтор
 wg_readable                                      = true
 use1_functor                                     = western_goods_ui_readable.menu_view
 use1_action_functor                              = western_goods_ui_readable.use_item
@@ -45,6 +48,9 @@ bounding_box_origin                     = -0.02095, 0.012679, -0.005057"""
     return total
 
 def text_post_horizont(some_text, cost):
+
+    grid_x = int(some_text[:2]) - 3
+    grid_y = int(some_text[3])
     total = rf""";=================POSTER_{some_text}_horizont
 [decor_poster{some_text}]:tch_junk
 class									= II_ATTCH
@@ -55,20 +61,18 @@ description								= st_placeable_poster{some_text}_descr
 inv_name								= st_placeable_poster{some_text}
 inv_name_short							= st_placeable_poster{some_text}
 
-icons_texture							= ui\ui_decor
-inv_grid_x								= 10
-inv_grid_y								= 7
-inv_grid_width							= 2
+icons_texture							= ui\metal_magazines_4
+inv_grid_x								= {grid_x}
+inv_grid_y								= {grid_y + grid_y}
+inv_grid_width							= 1
 inv_grid_height							= 2
 
 cost									= {cost}
 inv_weight								= 0.01
 
-; Функтор для размещения
 use2_functor         				    = placeable_furniture.place_item
 use2_action_functor  					= placeable_furniture.func_place_item
 
-; WG читабельный функтор
 wg_readable                                      = true
 use1_functor                                     = western_goods_ui_readable.menu_view
 use1_action_functor                              = western_goods_ui_readable.use_item

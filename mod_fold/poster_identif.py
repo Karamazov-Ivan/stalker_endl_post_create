@@ -18,7 +18,7 @@ def descrip_identif(magazine_id):
         descr = '"Heavy Metal". Выпуск #'
         mag_name = 'Постер из журнала "Heavy Metal"'
     elif magazine_id == '09':
-        descr = ':Журнал СССР "Крестьянка". Выпуск #'
+        descr = 'Журнал СССР "Крестьянка". Выпуск #'
         mag_name = 'Плакат СССР'
     elif magazine_id == '10':
         descr = 'Старый журнал (США). Выпуск #'
@@ -47,10 +47,10 @@ def descrip_identif(magazine_id):
 def rarity_identif(rarity_id):
     if rarity_id == '1':
         rar = r'%c[ui_gray_2]Обычный'
-        cost = 20
+        cost = 10
     elif rarity_id == '2':
         rar = r'%c[0,0,128,0]Необычный'
-        cost = 500
+        cost = 50
     elif rarity_id == '3':
         rar = r'%c[0,65,105,225]Редкий'
         cost = 3000
@@ -61,7 +61,7 @@ def rarity_identif(rarity_id):
         rar = r'%c[0,255,215,0]Легендарный'
         cost = 20000
     elif rarity_id == '6':
-        rar = r'%c[0,178,34,34]Новогодний'
+        rar = r'%c[0,178,34,34]Праздничный'
         cost = 23000
     elif rarity_id == '7':
         rar = r'%c[0,135,206,250]Специальный'

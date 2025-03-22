@@ -1,14 +1,14 @@
 import os
 import time
 import shutil
-import win32clipboard
-import sqlite3 as sl
-import pyautogui as pau
-import mod_fold.poster_item_templ as m_itm
-import mod_fold.poster_sql_db as m_db
-import mod_fold.poster_loot_quality as m_ql
-import mod_fold.poster_identif as m_pi
 import configparser
+import sqlite3 as sl
+import win32clipboard
+import pyautogui as pau
+import mod_fold.poster_sql_db as m_db
+import mod_fold.poster_identif as m_pi
+import mod_fold.poster_item_templ as m_itm
+import mod_fold.poster_loot_quality as m_ql
 # import win32gui
 
 from PIL import Image
@@ -28,7 +28,8 @@ def main():
     config.read("config.ini")  # читаем конфиг
 
     # Переменные из конфига
-    gamma_main_path = config["settings"]["gamma_main_path"].encode('unicode_escape').decode()
+    # gamma_main_path = config["settings"]["gamma_main_path"].encode('unicode_escape').decode()
+    gamma_main_path = config["settings"]["gamma_main_path"]
     poster_item_name = config["settings"]["poster_item_name"]
     ref_mesh_file = config["settings"]["ref_mesh_file"]
     ref_mesh_horizon_file = config["settings"]["ref_mesh_horizon_file"]
@@ -36,10 +37,10 @@ def main():
     texture_list = []
     connection = sl.connect('textures.db')
 
-    gamma_main_path = r'C:\GAMMA\mods\New_posters\gamedata'
-    poster_item_name = 'decor_poster' # Наименование постера в items
-    ref_mesh_file = 'poster_refer_mesh.ogf'
-    ref_mesh_horizon_file = 'poster_refer_mesh_horizont.ogf'
+    # gamma_main_path = r'C:\GAMMA\mods\New_posters\gamedata'
+    # poster_item_name = 'decor_poster' # Наименование постера в items
+    # ref_mesh_file = 'poster_refer_mesh.ogf'
+    # ref_mesh_horizon_file = 'poster_refer_mesh_horizont.ogf'
 
     mesh_ful_file_path = ref_mesh_path + os.sep + ref_mesh_file # Референс вертикального постера
     mesh_horizon_ful_file_path = ref_mesh_path + os.sep + ref_mesh_horizon_file # Референс горизонтального постера
@@ -112,18 +113,21 @@ def main():
         if del_mesh == 1:
             for file in os.listdir(result_mes_path):
                 os.remove(result_mes_path + se + file)
+            print('Файлы мешей удалены')
 
-        sql = m_db.SqlTextureDB()            
+        sql = m_db.SqlTextureDB()
         for texture_name in sql.select_from(con=connec, query_num=1):
             im = Image.open(f'{texture_name[4]}.dds')
             width, height = im.size
-            if texture_name[0][9] == '7' or height == 2048:
+            if os.path.isfile(result_mes_path + os.sep + f'prop_poster_vertical_{texture_name[0][6:]}.ogf'):
+                continue
+            elif texture_name[0][9] == '7' or height == 2048:
                 mes_coun += 1
                 shutil.copy(mesh_horizon_ful_file_path, result_mes_path + os.sep + f'prop_poster_vertical_{texture_name[0][6:]}.ogf')
             else:
                 mes_coun += 1
                 shutil.copy(mesh_ful_file_path, result_mes_path + os.sep + f'prop_poster_vertical_{texture_name[0][6:]}.ogf')
-        print(f'Меши постеров созданы: {mes_coun}, предыдущие копии удалены')
+        print(f'Меши постеров созданы: {mes_coun}')
 
     def create_lootbox_content(connec):
         'Записывает содержимое (журналов)лутбоксов'
@@ -219,7 +223,6 @@ def main():
 
             dir_quer = 'SELECT path, name FROM TEXTURE_TABLE'
 
-
             for texture_name in sql.select_from(con=connec, direct_quer=dir_quer): 
                 im = Image.open(f'{texture_name[0]}.dds')
                 width, height = im.size
@@ -231,10 +234,10 @@ def main():
                     xml_desc2.write('\n')
             xml_desc2.write('</w>')
 
-        print('Описание постеров записано')       
+        print('Описание текстур WG постеров записано')       
 
     def create_description_xml(connec):
-        'Описание текстур постеров для WG'
+        'Описание постеров'
 
         sql = m_db.SqlTextureDB()
             
@@ -257,9 +260,7 @@ def main():
             xml_desc.write('</string_table>')
         print('Описание текстур постеров записано')
 
-
-
-    def way_writer(connec):
+    def way_writer(connec, startnumb=0):
         '''Прописывает вручную пути текстур в файле меша
         Читай инструкцию внимательно!
         Требуется OGF tool:
@@ -272,43 +273,49 @@ def main():
             win32clipboard.CloseClipboard()
 
         l_dir_work = os.listdir(result_mes_path)
-        all_num = len(l_dir_work)
+        if startnumb > 0:
+            all_num = (len(l_dir_work) - startnumb) + 1
+        else:
+            all_num = len(l_dir_work)
         file_numb = 1
         sql = m_db.SqlTextureDB()
         dir_quer = 'SELECT name, path FROM TEXTURE_TABLE'
         textures_lis =  sql.select_from(con=connec, direct_quer=dir_quer)
         mesh_lis = os.listdir(result_mes_path)
         for mesh in mesh_lis:
-            print(f'{file_numb}/{all_num}')
-            file_numb += 1
-            str_time = time.time()
-            for texture in textures_lis:
-                if mesh.endswith(f'{texture[0][-9:]}.ogf'):
-                    clip_copy_boart(texture[1][-33:])
-                    os.startfile(result_mes_path + os.sep + mesh)
-                    time.sleep(0.3)
+            if int(mesh[-8:-4]) < startnumb:
+                continue
+            else:
+                print(f'{file_numb}/{all_num}')
+                file_numb += 1
+                str_time = time.time()
+                for texture in textures_lis:
+                    if mesh.endswith(f'{texture[0][-9:]}.ogf'):
+                        clip_copy_boart(texture[1][-33:])
+                        os.startfile(result_mes_path + os.sep + mesh)
+                        time.sleep(0.3)
 
-                    pau.moveTo(x=852, y=443)
-                    
-                    time.sleep(0.1)
+                        pau.moveTo(x=852, y=443)
+                        
+                        time.sleep(0.1)
 
-                    pau.click()
-                    
-                    pau.hotkey('ctrl', 'a')
-                    # time.sleep(0.1)
-                    
-                    pau.hotkey('ctrl', 'v')
-                    # time.sleep(0.1)
-                    pau.hotkey('ctrl', 's')
-                    time.sleep(0.1)
-                    pau.press('enter')
-                    time.sleep(0.1)
+                        pau.click()
+                        
+                        pau.hotkey('ctrl', 'a')
+                        # time.sleep(0.1)
+                        
+                        pau.hotkey('ctrl', 'v')
+                        # time.sleep(0.1)
+                        pau.hotkey('ctrl', 's')
+                        time.sleep(0.1)
+                        pau.press('enter')
+                        time.sleep(0.1)
 
-                    pau.hotkey('alt', 'f4')
-                    time.sleep(0.1)
-                    fin_time = time.time()
-                    print(f'{round(avg_t := (fin_time - str_time), 4)} sec.  Approximately time left: {round(((all_num - file_numb) * avg_t) / 60, 4)} min.')
-    
+                        pau.hotkey('alt', 'f4')
+                        time.sleep(0.1)
+                        fin_time = time.time()
+                        print(f'{round(avg_t := (fin_time - str_time), 4)} sec.  Approximately time left: {round(((all_num - file_numb) * avg_t) / 60, 4)} min.')
+
     def textures_delete(tex_path):
         'Очистить все папки с текстурами'
 
@@ -324,27 +331,26 @@ def main():
     def menu_func_new():
         while True:
 
-            inp = inquirer.select(
+            inp = inquirer.fuzzy(
                 message="Меню:",
                 choices=[
-                    Choice(value=1, name='1. Пересоздать БД с текстурами'),
-                    Choice(value=2, name='2. Переименовать текстуры постеров и внести в БД'),
-                    Choice(value=3, name='3. SELECT * БД'),
-                    Choice(value=4, name='4. Записать айтемы для постеров в "items_new_posters_pos.ltx"'),
-                    Choice(value=5, name='5. Создать меши для текстур постеров'),
-                    Choice(value=6, name='6. Записать содержимое журналов(лутбоксы)'),
-                    Choice(value=6, name='7. Записать содержимое журналов и плакатов (бумага)'),
-                    Choice(value=7, name='8. Записать описание для постеров'),
-                    Choice(value=8, name='9. Записать описание текступ для Western Goods'),
-                    Choice(value=10, name='10. Указать пути текстур в файле меша. Никакие программы кроме Cmd\PowerShell не должны быть включены! (требуется OGF tool)'),
-                    Choice(value=11, name='11. Очистить все папки с текстурами'),
+                    Choice(value=1, name=r'1. Пересоздать БД с текстурами'),
+                    Choice(value=2, name=r'2. Переименовать текстуры постеров и внести в БД'),
+                    Choice(value=3, name=r'3. Просмотр БД текстур'),
+                    Choice(value=4, name=r'4. Записать айтемы для постеров'), # "...configs\items\items\items_new_posters_pos.ltx"
+                    Choice(value=5, name=r'5. Создать меши для текстур постеров'), # "...meshes\dynamics\efp_props"
+                    Choice(value=6, name=r'6. Записать содержимое журналов(лутбоксы)'), # "...configs\items\settings\itms_manager_posters.ltx"
+                    Choice(value=7, name=r'7. Записать содержимое журналов и плакатов (бумага)'), # "...configs\items\settings\mod_parts_posters_3.ltx"
+                    Choice(value=8, name=r'8. Записать описание для постеров'), # "...configs\text\rus\poster_descrip.xml"
+                    Choice(value=9, name=r'9. Записать описание текступ для Western Goods'), # "...configs\ui\textures_descr\ui_rick_magazine.xml"
+                    Choice(value=10, name=r'10. Указать пути текстур в файле меша. Никакие программы кроме Cmd\PowerShell не должны быть включены! (требуется OGF tool)'),
+                    Choice(value=11, name=r'11. Очистить все папки с текстурами "textures\item\posters"'),
                     Choice(value=None, name='0. Выход')
                 ],
                 default=None
             ).execute()
 
             sql_class = m_db.SqlTextureDB()
-
 
             if inp == 1:
                 sql_class.create_tab(connection)
@@ -366,9 +372,11 @@ def main():
                 create_poster_items(connec=connection)
                 input()
             elif inp == 5:
-                inp_2 = input('Данное действие перезапишет все меши, продолжить? (д/н)')
-                if inp_2 in ('д', 'y'):
-                    copy_poster_mesh(connec=connection, del_mesh=1)
+                if input('Данное действие может перезаписать все меши, продолжить? (y/n)\n') == 'y':
+                    if input('Очистить папку "gamedata\meshes\dynamics\efp_props"\n') == 'y':
+                        copy_poster_mesh(connec=connection, del_mesh=1)
+                    else:
+                        copy_poster_mesh(connec=connection)
                 else:
                     print('Ничего')
                 input()
@@ -385,15 +393,17 @@ def main():
                 poster_texture_descr_wg(connec=connection)
                 input()
             elif inp == 10:
-                inp_4 = input('Вы закрыли все окна в windows? (д/н)\n')
-                if inp_3 in ('д', 'y'):
-                    way_writer(connec=connection)
+                if input('Вы закрыли все окна в windows? (y/n)\n') == 'y':
+                    strt_nmbr = input('Введите номер стартового файла или нажмите Ввод: ')
+                    if strt_nmbr != '':
+                        way_writer(connec=connection, startnumb=int(strt_nmbr))
+                    else:
+                        way_writer(connec=connection)
                 else:
                     print('Ничего')
                 input()
             elif inp == 11:
-                inp_3 = input('Данное действие очистит все патки с текстурами, продолжить? (д/н)\n')
-                if inp_3 in ('д', 'y'):
+                if input('Данное действие очистит все папки с текстурами, продолжить? (y/n)\n') == 'y':
                     textures_delete(path)
                 else:
                     print('Ничего')
@@ -403,102 +413,6 @@ def main():
             # else:
             #     break
                     
-
-
-    # def menu_func():
-    #     while True:
-    #         # print_slow('''
-    #         print('''
-    #         Меню:\n
-    #         1. Пересоздать БД с текстурами
-    #         2. Переименовать текстуры постеров и внести в БД
-    #         3. SELECT * БД
-    #         4. Записать айтемы для постеров в "items_new_posters_pos.ltx"
-    #         5. Создать меши для текстур постеров
-    #         6. Записать содержимое журналов(лутбоксы)
-    #         7. Записать содержимое журналов и плакатов (бумага)
-    #         8. Записать описание для постеров
-    #         9. Записать описание текступ для Western Goods
-    #         10. Указать пути текстур в файле меша. Никакие программы кроме Cmd\PowerShell не должны быть включены! (требуется OGF tool)
-    #         11. Очистить все папки с текстурами
-    #         0. Выход
-    #         ''')
-    #         try:
-    #             inp = int(input('\nВвод: '))
-    #         except:
-    #             inp = 100
-    #         sql_class = m_db.SqlTextureDB()
-
-    #         if inp == 1:
-    #             sql_class.create_tab(connection)
-    #             input()
-    #         elif inp == 2:
-    #             sql_class.delete_from(connection)
-    #             input()
-    #             rename_files(texture_list)
-    #             input()
-    #             sql_class.insert_data(connection, texture_list)
-    #             input()
-    #         elif inp == 3:
-    #             num = 0
-    #             for i in sql_class.select_from(connection):
-    #                 num += 1
-    #                 print(f'{num}. {i}')
-    #             input()
-    #         elif inp == 4:
-    #             create_poster_items(connec=connection)
-    #             input()
-    #         elif inp == 5:
-    #             inp_2 = input('Данное действие перезапишет все меши, продолжить? (д/н)')
-    #             if inp_2 in ('д', 'y'):
-    #                 copy_poster_mesh(connec=connection, del_mesh=1)
-    #             else:
-    #                 print('Ничего')
-    #             input()
-    #         elif inp == 6:
-    #             create_lootbox_content(connec=connection)
-    #             input()
-    #         elif inp == 7:
-    #             create_items_parts_paper()
-    #             input()
-    #         elif inp == 8:
-    #             create_description_xml(connec=connection)
-    #             input()
-    #         elif inp == 9:
-    #             poster_texture_descr_wg(connec=connection)
-    #             input()
-    #         elif inp == 10:
-    #             inp_4 = input('Вы закрыли все окна в windows? (д/н)\n')
-    #             if inp_3 in ('д', 'y'):
-    #                 way_writer(connec=connection)
-    #             else:
-    #                 print('Ничего')
-    #             input()
-    #         elif inp == 11:
-    #             inp_3 = input('Данное действие очистит все патки с текстурами, продолжить? (д/н)\n')
-    #             if inp_3 in ('д', 'y'):
-    #                 textures_delete(path)
-    #             else:
-    #                 print('Ничего')
-    #             input()
-    #         elif inp == 0:
-    #             break
-
-
-    #         # elif inp == 25:
-    #         #     num_3 = 0
-    #         #     for i in sql_class.select_from(connection, query_num=1):
-    #         #         num_3 += 1
-    #         #         print(f'{num_3}. {i}')
-    #         #     input()
-            
-            
-    #         else:
-    #             print('Ошибка, команда не найдена')
-    #             input()
-    
-    # menu_func()
-
     menu_func_new()
 
 if __name__ == '__main__':
