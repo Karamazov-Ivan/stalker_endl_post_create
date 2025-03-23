@@ -33,6 +33,8 @@ def main():
     poster_item_name = config["settings"]["poster_item_name"]
     ref_mesh_file = config["settings"]["ref_mesh_file"]
     ref_mesh_horizon_file = config["settings"]["ref_mesh_horizon_file"]
+    x_cor = int(config["settings"]["x"])
+    y_cor = int(config["settings"]["y"])
 
     texture_list = []
     connection = sl.connect('textures.db')
@@ -260,7 +262,7 @@ def main():
             xml_desc.write('</string_table>')
         print('Описание текстур постеров записано')
 
-    def way_writer(connec, startnumb=0):
+    def way_writer(connec, x, y, startnumb=0):
         '''Прописывает вручную пути текстур в файле меша
         Читай инструкцию внимательно!
         Требуется OGF tool:
@@ -295,7 +297,7 @@ def main():
                         os.startfile(result_mes_path + os.sep + mesh)
                         time.sleep(0.3)
 
-                        pau.moveTo(x=852, y=443)
+                        pau.moveTo(x=x, y=y)
                         
                         time.sleep(0.1)
 
@@ -327,9 +329,22 @@ def main():
                 os.remove(file_p)
                 # print(file_p)
         print('Текстуры удалены')
+    
+    def get_position():
+        x_set, y_set = pau.position()
+        config = configparser.ConfigParser()  # создаём объекта парсера
+        config.read("config.ini")  # читаем конфиг
+        config.set('settings', 'x', str(x_set))
+        config.set('settings', 'y', str(y_set))
+        with open('config.ini', 'w') as config_file:
+            config.write(config_file)
+        
 
     def menu_func_new():
         while True:
+
+            clear = lambda: os.system('cls')
+            clear()
 
             inp = inquirer.fuzzy(
                 message="Меню:",
@@ -343,8 +358,9 @@ def main():
                     Choice(value=7, name=r'7. Записать содержимое журналов и плакатов (бумага)'), # "...configs\items\settings\mod_parts_posters_3.ltx"
                     Choice(value=8, name=r'8. Записать описание для постеров'), # "...configs\text\rus\poster_descrip.xml"
                     Choice(value=9, name=r'9. Записать описание текступ для Western Goods'), # "...configs\ui\textures_descr\ui_rick_magazine.xml"
-                    Choice(value=10, name=r'10. Указать пути текстур в файле меша. Никакие программы кроме Cmd\PowerShell не должны быть включены! (требуется OGF tool)'),
-                    Choice(value=11, name=r'11. Очистить все папки с текстурами "textures\item\posters"'),
+                    Choice(value=10, name=r'10. Записать координаты курсора'),
+                    Choice(value=11, name=r'11. Указать пути текстур в файле меша. Никакие программы кроме Cmd\PowerShell не должны быть включены! (требуется OGF tool)'),
+                    Choice(value=12, name=r'12. Очистить все папки с текстурами "textures\item\posters"'),
                     Choice(value=None, name='0. Выход')
                 ],
                 default=None
@@ -393,16 +409,18 @@ def main():
                 poster_texture_descr_wg(connec=connection)
                 input()
             elif inp == 10:
+                get_position()
+            elif inp == 11:
                 if input('Вы закрыли все окна в windows? (y/n)\n') == 'y':
                     strt_nmbr = input('Введите номер стартового файла или нажмите Ввод: ')
                     if strt_nmbr != '':
-                        way_writer(connec=connection, startnumb=int(strt_nmbr))
+                        way_writer(connec=connection, x=x_cor, y=y_cor, startnumb=int(strt_nmbr))
                     else:
                         way_writer(connec=connection)
                 else:
                     print('Ничего')
                 input()
-            elif inp == 11:
+            elif inp == 12:
                 if input('Данное действие очистит все папки с текстурами, продолжить? (y/n)\n') == 'y':
                     textures_delete(path)
                 else:
@@ -410,8 +428,6 @@ def main():
                 input()
             elif inp == None:
                 break
-            # else:
-            #     break
                     
     menu_func_new()
 
