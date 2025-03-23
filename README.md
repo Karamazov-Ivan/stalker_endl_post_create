@@ -1,3 +1,8 @@
+![](https://dcbadge.limes.pink/api/shield/657620998325010442?style=flat) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/stalker_endl_post_create/:repo/total)
+
+
+
+
 ## Описание
 Это скрипт для добавления собственных постеров в мод для Stalker Anomaly [Endless posters Hideout Furniture](https://www.moddb.com/mods/stalker-anomaly/addons/endless-posters-hideout-furniture)
 
