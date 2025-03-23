@@ -10,7 +10,6 @@ path = r'C:\GAMMA\mods\New_posters\gamedata\textures\item\not_text\photo_packet'
 
 path_horisontal = r'C:\GAMMA\mods\New_posters\gamedata\textures\item\not_text\photo_packet_hor'
 
-
 def recur_file_sieve(path, path_horisontal):
 
     for i in os.listdir(path):
