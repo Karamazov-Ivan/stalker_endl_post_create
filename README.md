@@ -1,4 +1,4 @@
-![https://discordapp.com/users/657620998325010442](https://dcbadge.limes.pink/api/shield/657620998325010442?style=flat) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/Karamazov-Ivan/stalker_endl_post_create/total)
+![(https://discordapp.com/users/657620998325010442)](https://dcbadge.limes.pink/api/shield/657620998325010442?style=flat) ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/Karamazov-Ivan/stalker_endl_post_create/total)
 
 
 
