@@ -45,6 +45,6 @@ echo:
 pip install pywin32
 pip install pyautogui
 pip install InquirerPy
-python -m main_stalker
+cls && python -m main_stalker
 
 pause
